@@ -13,7 +13,19 @@ time_order = [
 #sorting according to above time order
 df['Time Spent'] = pd.Categorical(df['Time Spent'], categories=time_order, ordered=True)
 
+threshold = 4  # This is arbitrary and for demonstration purposes.
+
+# Calculate the average score across the mental health-related questions
+mental_health_cols = ['ADHD Q1', 'ADHD Q2', 'ADHD Q3', 'ADHD Q4',
+                      'Anxiety Q1', 'Anxiety Q2', 'Self Esteem Q1', 'Self Esteem Q2', 'Self Esteem Q3',
+                      'Depression Q1', 'Depression Q2', 'Depression Q3']
+df['Average Mental Health Score'] = df[mental_health_cols].mean(axis=1)
+
+# Based on the average score, determine if a mental health check-up is recommended
+df['Outcome'] = df['Average Mental Health Score'].apply(lambda x: 'Type 3' if x >= threshold else ('Type 2' if x>3 and x<4 else 'Type 1'))
+
 # extracting data from the dataset for below mentioned variables
+outcome_counts = df['Outcome'].value_counts()
 time_Spent= df.groupby('Time Spent').size()
 occupation_counts = df['Occupation'].value_counts()
 age_means = df.groupby('Time Spent')[['Age']].mean().mean(axis=1)
@@ -32,7 +44,7 @@ def plot_means(means, title, xlabel, ylabel, filename):
 
     plt.figure(figsize=(10, 6))
     bars = plt.bar(means.index, means.values)
-
+    total = sum(means.values)
     highest_value = means.max()
     lowest_value = means.min()
 
@@ -45,6 +57,9 @@ def plot_means(means, title, xlabel, ylabel, filename):
             bar.set_color('green')
             bar.set_edgecolor('black')
             bar.set_linewidth(2)
+        percentage = f'{(bar.get_height() / total):.1%}'
+        plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), percentage,
+                 ha='center', va='bottom', color='black')
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -68,6 +83,8 @@ def plotPie(data, title, filename):
     plt.show()
 
 #plotting the graph and chart by calling above functions- plot_means,plotPie
+plot_means(outcome_counts, 'Distribution of Outcome for Mental Health Check-up Recommendation', 'Outcome', 'Number of Participants', str(count)+"_"+'Mental_Health_Check_up_Recommendation')
+count=count+1
 plot_means(time_Spent, 'Time Spent on Social Media', 'Time Spent', 'Frequency', str(count)+"_"+'Time_Spent_on_Social_Media')
 count=count+1
 plotPie(occupation_counts, 'Distribution of data based on their Occupation.', str(count)+"_"+'Distribution_Occupation')
