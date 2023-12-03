@@ -34,9 +34,16 @@ anxiety_means = df.groupby('Time Spent')[['Anxiety Q1', 'Anxiety Q2']].mean().me
 self_esteem_means = df.groupby('Time Spent')[['Self Esteem Q1', 'Self Esteem Q2', 'Self Esteem Q3']].mean().mean(axis=1)
 depression_means = df.groupby('Time Spent')[['Depression Q1', 'Depression Q2', 'Depression Q3']].mean().mean(axis=1)
 # correlation matrix for the dataset
-correlation_matrix = df[['ADHD Q1', 'ADHD Q2', 'ADHD Q3', 'ADHD Q4', 'Anxiety Q1', 'Anxiety Q2',
-                         'Self Esteem Q1', 'Self Esteem Q2', 'Self Esteem Q3',
-                         'Depression Q1', 'Depression Q2', 'Depression Q3']].corr()
+correlation_cols = ['Age', 'ADHD Score', 'Anxiety Score', 'Self Esteem Score', 'Depression Score', 'Total Score', 'Outcome']
+
+df['ADHD Score'] = df[['ADHD Q1', 'ADHD Q2', 'ADHD Q3', 'ADHD Q4']].mean(axis=1)
+df['Anxiety Score'] = df[['Anxiety Q1', 'Anxiety Q2']].mean(axis=1)
+df['Self Esteem Score'] = df[['Self Esteem Q1', 'Self Esteem Q2', 'Self Esteem Q3']].mean(axis=1)
+df['Depression Score'] = df[['Depression Q1', 'Depression Q2', 'Depression Q3']].mean(axis=1)
+df['Total Score'] = df[['ADHD Score', 'Anxiety Score', 'Self Esteem Score', 'Depression Score']].sum(axis=1)
+df['Outcome'] = pd.factorize(df['Outcome'])[0] + 1
+correlation_matrix = df[correlation_cols].corr()                                          
+                                                
 
 sns.set_palette('deep')
 #plot the bar-graph
@@ -45,8 +52,12 @@ def plot_means(means, title, xlabel, ylabel, filename):
     plt.figure(figsize=(10, 6))
     bars = plt.bar(means.index, means.values)
     total = sum(means.values)
-    highest_value = means.max()
-    lowest_value = means.min()
+    if(xlabel=='Outcome' or ylabel=='Age'):
+        highest_value = means.min()
+        lowest_value = means.max()
+    else:
+        highest_value = means.max()
+        lowest_value = means.min()    
 
     for bar in bars:
         if bar.get_height() == highest_value:
@@ -100,10 +111,31 @@ count=count+1
 plot_means(depression_means, 'Mean Depression Score by Time Group', 'Time Spent', 'Mean Depression Score', str(count)+"_"+'depression_means')
 count=count+1
 
+dataCorr=pd.read_csv('data\\smmh.csv')
+
+ADHD = ['ADHD Q1', 'ADHD Q2', 'ADHD Q3', 'ADHD Q4']
+dataCorr['ADHD Score'] = df[ADHD].sum(axis=1)
+
+Anxiety = ['Anxiety Q1', 'Anxiety Q2']
+dataCorr['Anxiety Score'] = df[Anxiety].sum(axis=1)
+
+SelfEsteem = ['Self Esteem Q1', 'Self Esteem Q2','Self Esteem Q3']
+dataCorr['Self Esteem Score'] = df[SelfEsteem].sum(axis=1)
+
+Depression = ['Depression Q1', 'Depression Q2','Depression Q3']
+dataCorr['Depression Score'] = df[Depression].sum(axis=1)
+
+Total = ['ADHD Score', 'Anxiety Score','Self Esteem Score','Depression Score']
+dataCorr['Total Score'] = df[Total].sum(axis=1)
+
+
 #display correlation matrix and saving into the output folder
 plt.figure(figsize=(12, 10))
 sns.heatmap(correlation_matrix, annot=True, fmt=".2f", cmap='viridis')
 plt.title('Correlation Matrix of Mental Health Scores')
 plt.tight_layout()
+plt.xticks(rotation=45)
+plt.yticks(rotation=45)                      
+                       
 plt.savefig("output\\"+str(count)+"_"+"correlation_matrix.png")
 plt.show()
